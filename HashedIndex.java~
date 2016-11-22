@@ -1,0 +1,303 @@
+/*  
+ *  This file is part of the computer assignment for the
+ *  Natural Language Processing course at Williams.
+ * 
+ *  Author: Johan Boye
+ */  
+
+package nlp;
+
+import java.util.*;
+
+/**
+ *   Implements an inverted index as a Hashtable from words to PostingsLists.
+ */
+public class HashedIndex implements Index {
+
+    /** The index as a hashtable. */
+    public HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
+
+    public HashMap<Integer, Integer> wordsInD = new HashMap<Integer, Integer>();
+
+    public int docCount;
+    /**
+     *  Inserts this token in the hashtable.
+     */
+    public void insert( String token, int docID, int offset ) {
+
+	//If our index does not have a list for the token
+	PostingsList list = index.get( token );
+	if( list == null ) {
+	    list = new PostingsList();
+	    index.put( token, list );
+	}
+	list.add( docID, offset );
+	if( wordsInD.containsKey( docID ) ){
+		wordsInD.put(docID, wordsInD.get( docID ) + 1);
+	} else wordsInD.put( docID, 1 );
+
+	docCount = docID;
+    }
+    
+    
+    /**
+     *  Returns all the words in the index.
+     */
+    public Iterator<String> getDictionary() {
+	return index.keySet().iterator();
+    }
+    
+    
+    /**
+     *  Returns the postings for a specific term, or null
+     *  if the term is not in the index.
+     */
+    public PostingsList getPostings( String token ) {
+	return index.get(token);
+    }
+
+
+    // Returns the intersected postings list of the documents contains both words mapped by lists
+    public PostingsList intersect( PostingsList first, PostingsList second ) {
+	// The indexes in both lists
+	int firstIndex = 0;
+	int secondIndex = 0;
+	PostingsList merged = new PostingsList();
+
+	// Loop through both postings list
+	while( firstIndex < first.size() && secondIndex < second.size() ) {
+
+	    // Get each docID in their postings list
+	    int firstID = first.get( firstIndex ).docID;
+	    int secondID = second.get( secondIndex ).docID;
+
+	    // If they are the same, then they exist in the same document, so add that document to the merged list
+	    if( firstID == secondID ) {
+		merged.simpleAdd( firstID );
+		firstIndex++;
+		secondIndex++;
+
+		// Otherwise continue to increment
+	    } else if( firstID < secondID ) {
+		firstIndex++;
+	    } else secondIndex++;
+	}
+	// Return the final list
+	return merged;
+    }
+
+
+    // Returns the intersected postings list of documents containing words/phrases appearing subsequently in mapped lists
+    public PostingsList positionalIntersect( PostingsList first, PostingsList second ) {
+	// The indexes in both lists
+	int firstIndex = 0;
+	int secondIndex = 0;
+	PostingsList merged = new PostingsList();
+
+	// Loop through each index of each list
+	while( firstIndex < first.size() && secondIndex < second.size() ) {
+	    int firstID = first.get( firstIndex ).docID;
+	    int secondID = second.get( secondIndex ).docID;
+
+	    // If they the IDs at their respective indices are equal
+	    if( firstID == secondID ) {
+		PostingsEntry firstOffsets = first.get( firstIndex );
+		PostingsEntry secondOffsets = second.get( secondIndex );
+		int checkOne = 0;
+		int checkTwo = 0;
+
+		// Loop through each offset list
+		while( checkOne < firstOffsets.size() && checkTwo < secondOffsets.size() ) {
+		    int firstPosition = firstOffsets.getPosition( checkOne );
+		    int secondPosition = secondOffsets.getPosition( checkTwo );
+
+		    // If a position in first is one less than position in second
+		    if( firstPosition + 1 == secondPosition ) {
+		
+			// If we have already added to merged AND we are in the same document as the end of the list
+			if( merged.size() > 0 && merged.get( merged.size()-1 ).docID == firstID ) {
+			    // Only add the offset position
+			    merged.get( merged.size() - 1 ).addPosition( secondPosition );
+			} else {
+			// Success! Add the docID and the offset to the list
+			    merged.add( secondID, secondPosition );
+			}
+			checkOne++;
+			checkTwo++;
+			// Else continue along
+		    } else if( firstPosition < secondPosition ){
+			checkOne++;
+		    } else checkTwo++;
+		}
+		firstIndex++;
+		secondIndex++;
+	    } else if( firstID < secondID) {
+		firstIndex++;
+	    } else secondIndex++;
+	}
+	return merged;
+    }
+
+    // Returns a Postingslist with entries that are unions of the parameters
+    // Such that the scores of the entries are computed depending on indexing of lists
+    public PostingsList rankedUnion( PostingsList listOne, PostingsList listTwo ) {
+	// The indexes in both lists
+	int firstIndex = 0;
+	int secondIndex = 0;
+	PostingsList merged = new PostingsList();
+	
+	// Loop through both postings list
+	while( firstIndex < listOne.size() ||  secondIndex < listTwo.size() ) {
+	    PostingsEntry firstEntry;
+	    PostingsEntry secondEntry;
+
+	    // Have we reached the end of list one?
+	    if( firstIndex<listOne.size() ) {
+		firstEntry = listOne.get(firstIndex);
+		// If we have, then we create a 'dummy' entry so that the second list can iterate over the rest of its docs
+	    } else {
+		firstEntry = new PostingsEntry( docCount + 1, 0 );
+	    }
+	    
+	    // Inverse of above if statement
+	    if( secondIndex<listTwo.size() ) {
+		secondEntry = listTwo.get(secondIndex);
+	    } else {
+		secondEntry = new PostingsEntry( docCount + 1, 0 );
+	    }
+
+
+	    PostingsEntry newEntry = new PostingsEntry();
+	    // If they are the same, then they exist in the same document, so add scores from each entry and add that document to the merged list
+	    if( firstEntry.docID == secondEntry.docID ) {
+		
+		newEntry.score = firstEntry.score + secondEntry.score;
+		newEntry.docID = firstEntry.docID;
+		firstIndex++;
+		secondIndex++;
+		
+		// else we want the first doc score 
+	    } else if( firstEntry.docID < secondEntry.docID ) {
+		newEntry.score = firstEntry.score;
+		newEntry.docID = firstEntry.docID;
+		firstIndex++;
+		// Otherwise we only want the second doc 
+	    } else{
+		newEntry.score = secondEntry.score;
+		newEntry.docID = secondEntry.docID;
+		secondIndex++;
+
+	    }
+	    merged.addRanked( newEntry );
+	    
+	}
+	// Return the final list
+	return merged;
+    }  
+    
+    
+    // Calculates the cosine score of a entry in a list
+    public double calculateCos( PostingsEntry entry, PostingsList list ){
+    double tf = entry.size();
+    double idf = Math.log( docCount/list.size() );
+    double result = (tf*idf)/wordsInD.get( entry.docID );
+    return result;
+    }
+    
+
+    // Calculates the score of all the entries in a postings list
+    public PostingsList calcScore( PostingsList list ) {
+	PostingsList next = new PostingsList();
+	for( int j = 0; j< list.size(); j++ ){
+	    PostingsEntry nextEntry = new PostingsEntry( list.get( j ).docID, 0 );
+	    nextEntry.score += calculateCos( list.get( j ), list );	
+	    next.addRanked( nextEntry );
+	}
+	return next;
+    }
+
+    /**
+     *  Searches the index for postings matching the query in @code{searchterms}.
+     */
+    public PostingsList search( ArrayList<String> searchterms, int queryType, int rankingType ) {
+	
+	Iterator terms = searchterms.iterator();
+
+	// The list to be returned
+	PostingsList finalList = new PostingsList();
+
+	// If there is a query to be searched
+	if( searchterms.size() > 0 ) {
+	    finalList = index.get( terms.next() );
+
+	    // If there is a postings list mapped from the first search word
+	    if( finalList != null ) {
+		
+
+		// A ranked query
+		if( queryType == Index.RANKED_QUERY ) {
+
+		    // Calculate the score of the first word
+		    finalList = calcScore( finalList );
+
+		    // If we have more search terms in the query
+		    while( terms.hasNext() ){
+
+			// Get the next list, and continue to calculate scores and union the postingslist provided they exist until out of searchterms
+			PostingsList nextList = index.get( terms.next());
+			if( nextList != null ) {
+			    nextList = calcScore( nextList );
+			    finalList = rankedUnion( finalList, nextList );		
+			}
+		    }
+		    // Sort list by relevance score
+		    Collections.sort( finalList.list );
+		    
+		    // Intersection query
+		} else if( queryType == Index.INTERSECTION_QUERY ) {
+		    while(terms.hasNext() ){
+			// If the list exists for the next search term
+			PostingsList intList = index.get( terms.next() );
+			if( intList != null ) {
+			    finalList = intersect( finalList, index.get( terms.next() ) );
+			    // Otherwise the query can't be searched
+			} else {
+			    finalList = null;
+			    break;
+		    }
+		    
+		    // A phrase query
+		} else if( queryType == Index.PHRASE_QUERY ) {
+		    while( terms.hasNext() ) {
+			String next = (String)terms.next();
+			// If any of the terms is not in our index hashmap, then we cannot search
+			if( index.keySet().contains( next ) ) {
+			    finalList = positionalIntersect( finalList, index.get( next ) );	    
+			} else {
+			    // A term in the search phrase is not in the list, so there are no results
+			    finalList = null;
+			    break;
+			}
+		    }
+		}
+	    }
+	    return finalList;
+	}
+	
+    }
+    
+
+    
+	
+
+	
+
+
+
+
+
+
+
+
+
+
