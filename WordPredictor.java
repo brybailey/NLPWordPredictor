@@ -6,7 +6,7 @@ public class WordPredictor extends Frame {
 	
     private Label userLabel;
     private JTextArea userInput;    
-    public static JTextArea predictedWords;
+    private JTextArea predictedWords;
     
     public WordPredictor() {
 	setLayout( new FlowLayout() );
@@ -16,11 +16,10 @@ public class WordPredictor extends Frame {
 
 
 	userInput = new JTextArea(46,20);
-	userInput.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "predict" );
-	userInput.getActionMap().put("predict", new Predict() );
-
-
 	predictedWords = new JTextArea(5,15);
+	userInput.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), "predict" );
+	userInput.getActionMap().put("predict", new Predict(userInput, predictedWords) );
+
 	add( userInput );
 	add( predictedWords );
 	setVisible( true );
