@@ -17,44 +17,44 @@ import java.nio.charset.StandardCharsets;
  */
 public class ViterbiTrigramDecoder implements ViterbiDecoder {
 
-    /**
-     * The trellis used for Viterbi decoding. The first index is the time step.
-     */
-    double[][][] v;
-    
-    /** The trigram stats. */
-    double[][][] a = new double[Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS];
-    
-    /** The observation matrix. */
-    double[][] b = new double[Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS];
-    
-    /** Pointers to retrieve the topmost hypothesis. */
-    int[][][] backptr;
-    
+	/**
+	 * The trellis used for Viterbi decoding. The first index is the time step.
+	 */
+	double[][][] v;
 
-    /**  
-     *  Reads the bigram probabilities (the 'A' matrix) from a file. 
-     */
-    public void init_a(String filename) {
-	try {
-	    InputStreamReader in = new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8);
-	    Scanner scan = new Scanner(in).useLocale(Locale.US);
-	    while (scan.hasNext()) {
-		int i = scan.nextInt();
-		int j = scan.nextInt();
-		int k = scan.nextInt();
-		double d = scan.nextDouble();
-		a[i][j][k] = d;
+	/** The trigram stats. */
+	double[][][] a = new double[Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS];
+
+	/** The observation matrix. */
+	double[][] b = new double[Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS];
+
+	/** Pointers to retrieve the topmost hypothesis. */
+	int[][][] backptr;
+
+
+	/**  
+	 *  Reads the bigram probabilities (the 'A' matrix) from a file. 
+	 */
+	public void init_a(String filename) {
+	    try {
+		InputStreamReader in = new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8);
+		Scanner scan = new Scanner(in).useLocale(Locale.US);
+		while (scan.hasNext()) {
+		    int i = scan.nextInt();
+		    int j = scan.nextInt();
+		    int k = scan.nextInt();
+		    double d = scan.nextDouble();
+		    a[i][j][k] = d;
+		}
+	    } catch (Exception e) {
+		e.printStackTrace();
 	    }
-	} catch (Exception e) {
-	    e.printStackTrace();
 	}
-    }
     
     
     // ------------------------------------------------------
-
-
+    
+    
     /** 
      *  Initializes the observation probabilities (the 'B' matrix).
      */
@@ -75,25 +75,76 @@ public class ViterbiTrigramDecoder implements ViterbiDecoder {
 	}
     }
     
-
+    
     // ------------------------------------------------------
-
-
+    
+    
     /**
      * Performs the Viterbi decoding and returns the most likely string.
      */
     public String viterbi(String s) {
+	int x[] = new int[s.length()+1];
+	for (int i = 0; i < s.length(); i++) {
+	    x[i] = Key.charToIndex(s.charAt(i));
+	}
+	x[s.length()] = Key.START_END;
 	
+	v = new double[x.length][Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS];
+	backptr = new int[x.length][Key.NUMBER_OF_CHARS][Key.NUMBER_OF_CHARS];
+	
+	// First letter
+	for (int j = 0; j < Key.NUMBER_OF_CHARS; j++) {
+	    backptr[0][Key.START_END][j] = Key.START_END;
+	    v[0][Key.START_END][j] = a[Key.START_END][Key.START_END][j] + b[x[0]][j];
+	}
 
-	// REPLACE THE STATEMENT BELOW WITH YOUR CODE
-
-	return s;
+	// Second letter
+	for (int i = 0; i < Key.NUMBER_OF_CHARS; i++) {
+	    for (int j = 0; j < Key.NUMBER_OF_CHARS; j++) {
+		backptr[1][i][j] = Key.START_END;
+		v[1][i][j] = v[0][Key.START_END][i] + a[Key.START_END][i][j] + b[x[1]][j];
+	    }
+	}
+	
+	// General case
+	for (int n = 2; n < x.length; n++) {
+	    for (int i = 0; i < Key.NUMBER_OF_CHARS; i++) {
+		for (int j = 0; j < Key.NUMBER_OF_CHARS; j++) {
+		    double max = Double.NEGATIVE_INFINITY;
+		    int key = 9;
+		    for (int k = 0; k < Key.NUMBER_OF_CHARS; k++) {
+			double p = v[n-1][k][i] + a[k][i][j];
+			if (p > max) {
+			    max = p;
+			    key = k;
+			}
+		    }
+		    
+		    v[n][i][j] = max + b[x[n]][j];
+		    backptr[n][i][j] = key;
+		}
+	    }
+	}
+	
+	// Finally retrieve the result
+	String result = "";
+	int k1 = Key.START_END;
+	int k2 = Key.START_END;
+	
+	for (int n = x.length-1; n > 1; n--) {
+	    int k0 = backptr[n][k1][k2];
+	    k2 = k1;
+	    k1 = k0;
+	    result = Key.indexToChar(k0) + result;
+	}
+	
+	return result;
     }
     
-
+    
     // ------------------------------------------------------
-
-
+    
+    
     /**
      *  Constructor: Initializes the A and B matrices.
      */
@@ -102,5 +153,5 @@ public class ViterbiTrigramDecoder implements ViterbiDecoder {
 	init_b();
     }
 }
-    
+
 
