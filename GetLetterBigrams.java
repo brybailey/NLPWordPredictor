@@ -58,6 +58,10 @@ public class GetLetterBigrams {
     public int getCount() {
 	return bigramCount;
     }
+
+    public HashMap<Character,Integer> getLetterMappings() {
+	return letterMap;
+    }
     public void mapLetters() {
 	letterMap = new HashMap<Character, Integer>();
 	int i = 0;
@@ -70,19 +74,20 @@ public class GetLetterBigrams {
 	    letterMap.put( alphaUpper, i );
 	    i++;
 	}
-
-	for( char letter: letterMap.keySet() ) {
-	    System.out.println( letter + " " + letterMap.get( letter ));
-	}
+	String hyphen = "-";
+	letterMap.put( hyphen.charAt(0), i );
 
     }
 
     public static void main( String[] args ) {
 	GetLetterBigrams grams = new GetLetterBigrams( args[0].toString() );
 	HashMap<String, Integer> map = grams.getGrams();
+	HashMap<Character, Integer> letters = grams.getLetterMappings();
 	System.out.println( grams.getCount() );
 	for( String bigram: map.keySet() ) {
-	    System.out.println( bigram + " " + Math.log((double)map.get(bigram)/grams.getCount()));
+		int firstLetter = letters.get(bigram.charAt(0));
+		int secondLetter = letters.get(bigram.charAt(1));
+		System.out.println( firstLetter+ " " + secondLetter  + " " + Math.log((double)map.get(bigram)/grams.getCount()));
 	}
     }
 }
