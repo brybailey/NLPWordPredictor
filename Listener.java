@@ -20,6 +20,7 @@ public class Listener implements KeyListener{
     //Textfields
     JTextField input;
     JTextField output;
+
     //Word level prediciton tables
     BigramPredictor bigramPredictor = new BigramPredictor();
     TrigramPredictor trigramPredictor = new TrigramPredictor();
@@ -29,6 +30,7 @@ public class Listener implements KeyListener{
     int lastCode;
     int wordCount=0;
     String sentence="";
+    String currentWord="";
     String lastWord="";
     String secondLastWord="";
     int lastSpaceIndex=0;
@@ -55,14 +57,15 @@ public class Listener implements KeyListener{
         String s = Character.toString(e.getKeyChar());
         //Current sentence
         sentence = input.getText();
-        
+        currentWord += s;
+	System.out.println( currentWord );
         // System.out.println(code);
         System.out.println(s);
         
         //Spacebar pressed
         if(code == KeyEvent.VK_PERIOD){
             wordCount++;
-            
+            currentWord = "";
             //Space pressed for the second time
             if(code == lastCode){
                 input.setText(sentence+output.getText());
@@ -102,20 +105,59 @@ public class Listener implements KeyListener{
                 
                 lastWord = sentence;
             }
-          
+	       
         
         // sentence +=s;
         //Delete
-    } else if(code == KeyEvent.VK_BACK_SPACE){
+	} else if(code == KeyEvent.VK_BACK_SPACE){
         System.out.println("Back Space");
         
         //All normal alphanumerics
-    }else {
-        sentence +=s;
-        
+	} else if( wordCount > 0 ) {
+	    sentence += s;
+	    /*	    boolean inDict = false;
+	    for( String word: dict.keySet() ) {
+		if( word.startsWith( currentWord ) ){
+		    inDict = true;
+		}
+	    }
+	    /*	    while( !inDict ) {
+		currentWord = decode( currentWord );
+		} */
+
+	    PriorityQueue<Map.Entry<String,Integer>> newpq = new PriorityQueue<Map.Entry<String,Integer>>(pq.size(), new Comparator<Map.Entry<String, Integer>>() {
+		    public int compare( Map.Entry<String,Integer> arg0,
+					Map.Entry<String,Integer> arg1) {
+			return arg1.getValue().compareTo(arg0.getValue() );
+		    }
+		}
+);
+	    for( Map.Entry<String,Integer> element: pq ) {
+		if( element.getKey().startsWith( currentWord ) ) {
+		    newpq.add( element );
+		}
+	    }
+	    output.setText( newpq.poll().getKey() );
+	    System.out.println(" WORD COUNT CHECK " );
+	}
+	lastCode = code;
     }
-    lastCode = code;
     
+    
+
+    
+    
+    /*
+    private String decode( String current ) {
+	String decoded = "";
+	if( current.length() == 2 ) {
+	    ViterbiBigramDecoder bigramDecoder = new ViterbiBigramDecoder( "letter_bigrams.txt" );
+	    decoded = bigramDecoder.viterbi( current );
+	} else if ( current.length() > 2 ) {
+	    ViterbiTrigramDecoder trigramDecoder = new ViterbiTrigramDecoder( "letter_trigrams.txt" );
+	    decoded = trigramDecoder.viterbi( current );
+	}
+	return decoded;
+	}*/
 }
 
-}
