@@ -13,11 +13,13 @@ public class TrigramPredictor {
     
     public TrigramPredictor(){
         try{
+            System.out.print("Initializing Trigram HashMap... ");
             FileInputStream fis = new FileInputStream(FILENAME);
             ObjectInputStream ois = new ObjectInputStream(fis);
             index = (HashMap) ois.readObject();
             ois.close();
-            fis.close();        //index = input.readObject();
+            fis.close();
+            System.out.println("Done.");
         } catch (Exception e){
             e.printStackTrace();
         }

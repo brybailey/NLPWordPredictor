@@ -20,7 +20,6 @@ public class Listener implements KeyListener{
     //Textfields
     JTextField input;
     JTextField output;
-
     //Word level prediciton tables
     BigramPredictor bigramPredictor = new BigramPredictor();
     TrigramPredictor trigramPredictor = new TrigramPredictor();
@@ -30,11 +29,12 @@ public class Listener implements KeyListener{
     int lastCode;
     int wordCount=0;
     String sentence="";
-    String currentWord="";
-    String lastWord="";
+    String first="";
+    String second="";
+    String third="";
     String secondLastWord="";
     int lastSpaceIndex=0;
-    
+    String currentWord="";
     
     PriorityQueue<Map.Entry<String,Integer>> pq;
     
@@ -57,15 +57,13 @@ public class Listener implements KeyListener{
         String s = Character.toString(e.getKeyChar());
         //Current sentence
         sentence = input.getText();
-        currentWord += s;
-	System.out.println( currentWord );
+        currentWord+=s;
         // System.out.println(code);
         System.out.println(s);
-        
         //Spacebar pressed
         if(code == KeyEvent.VK_PERIOD){
             wordCount++;
-            currentWord = "";
+            currentWord="";
             //Space pressed for the second time
             if(code == lastCode){
                 input.setText(sentence+output.getText());
@@ -76,88 +74,93 @@ public class Listener implements KeyListener{
             
             //One word in sentence, use bigram model
             if(wordCount>0 && wordCount<2){
-                System.out.println("BIGRAM parsing for: ("+sentence+")");
-                //sentence=sentence.substring(sentence.lastIndexOf("."));
-               System.out.println("Remove trailing space: ("+sentence+")");
-                lastWord = sentence.substring(sentence.lastIndexOf(".")+1,sentence.length());
-               
-              System.out.println("Last word: (" + lastWord+")");
-                
-                pq = bigramPredictor.predict(lastWord);
+                first = getLastWord(sentence);
+                pq = bigramPredictor.predict(first);
                 output.setText(pq.poll().getKey());
-
-            //At least two words in sentence, use trigram model
+                //At least two words in sentence, use trigram model
             } else if(wordCount>1){
-                System.out.println("TRIGRAM parsing for (" +sentence+")");
-                String removeLastWord = sentence.substring(0,sentence.lastIndexOf("."));
-                System.out.println("Remove last word: ("+removeLastWord+")");
-                secondLastWord = removeLastWord.substring(removeLastWord.lastIndexOf(".")+1,removeLastWord.length());
-                System.out.println("Second to last word: (" +secondLastWord+")");
-                
-                lastWord=sentence.substring(sentence.lastIndexOf(".")+1);
-                
-                System.out.println("Last word: (" +lastWord+")");
-                
-                pq = trigramPredictor.predict(secondLastWord,lastWord);
+                first = getLastWord(sentence);
+                sentence = removeLastWord(sentence);
+                second = getLastWord(sentence);
+                pq = trigramPredictor.predict(second,first);
                 output.setText(pq.poll().getKey());
                 
             }else{
-                
-                lastWord = sentence;
+                first = sentence;
             }
-	       
-        
-        // sentence +=s;
-        //Delete
-	} else if(code == KeyEvent.VK_BACK_SPACE){
-        System.out.println("Back Space");
-        
-        //All normal alphanumerics
-	} else if( wordCount > 0 ) {
-	    sentence += s;
-	    /*	    boolean inDict = false;
-	    for( String word: dict.keySet() ) {
-		if( word.startsWith( currentWord ) ){
-		    inDict = true;
-		}
-	    }
-	    /*	    while( !inDict ) {
-		currentWord = decode( currentWord );
-		} */
-
-	    PriorityQueue<Map.Entry<String,Integer>> newpq = new PriorityQueue<Map.Entry<String,Integer>>(pq.size(), new Comparator<Map.Entry<String, Integer>>() {
-		    public int compare( Map.Entry<String,Integer> arg0,
-					Map.Entry<String,Integer> arg1) {
-			return arg1.getValue().compareTo(arg0.getValue() );
-		    }
-		}
-);
-	    for( Map.Entry<String,Integer> element: pq ) {
-		if( element.getKey().startsWith( currentWord ) ) {
-		    newpq.add( element );
-		}
-	    }
-	    output.setText( newpq.poll().getKey() );
-	    System.out.println(" WORD COUNT CHECK " );
-	}
-	lastCode = code;
+            //Delete
+        } else if(code == KeyEvent.VK_BACK_SPACE){
+            System.out.println("Back Space");
+            
+            //All normal alphanumerics
+        } else if( wordCount > 0 ) {
+            sentence += s;
+            
+            
+            PriorityQueue<Map.Entry<String,Integer>> newpq = new PriorityQueue<Map.Entry<String,Integer>>(200000, new Comparator<Map.Entry<String, Integer>>() {
+                public int compare( Map.Entry<String,Integer> arg0,
+                                   Map.Entry<String,Integer> arg1) {
+                    return arg1.getValue().compareTo(arg0.getValue() );
+                }
+            });
+            System.out.println("CW("+currentWord+")");
+            for( Map.Entry<String,Integer> element: pq ) {
+                if( element.getKey().startsWith( currentWord ) ) {
+                    newpq.add( element );
+                }
+            }
+            pq =newpq;
+            if(pq!=null &&pq.peek()!=null ){
+                output.setText( pq.poll().getKey() );
+                System.out.println(" WORD COUNT CHECK " );
+            } else{
+                System.out.println("Failed to match word: " + currentWord);
+            }
+            
+        }
+        lastCode = code;
     }
     
-    
-
-    
-    
-    /*
-    private String decode( String current ) {
-	String decoded = "";
-	if( current.length() == 2 ) {
-	    ViterbiBigramDecoder bigramDecoder = new ViterbiBigramDecoder( "letter_bigrams.txt" );
-	    decoded = bigramDecoder.viterbi( current );
-	} else if ( current.length() > 2 ) {
-	    ViterbiTrigramDecoder trigramDecoder = new ViterbiTrigramDecoder( "letter_trigrams.txt" );
-	    decoded = trigramDecoder.viterbi( current );
-	}
-	return decoded;
-	}*/
+    public String getLastWord(String s){
+        String w = s.substring(s.lastIndexOf(".")+1,s.length());
+        return w;
+    }
+    public String removeLastWord(String s){
+        String ns = s.substring(0,s.lastIndexOf("."));
+        return ns;
+    }
+    public String removeTrailingSpace(String s){
+        String ns=s.substring(s.lastIndexOf("."));
+        return ns;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
