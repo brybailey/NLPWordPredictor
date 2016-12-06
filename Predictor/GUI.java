@@ -21,13 +21,13 @@ public class GUI extends JFrame{
     
     
     
-    public GUI(){
+    public GUI(int level){
 	JFrame frame = new JFrame();
 	
 	Container contentPane = frame.getContentPane();
 	input = new JTextField();
 	output = new JTextField(10);
-	input.addKeyListener(new Listener(input,output));
+	input.addKeyListener(new Listener(input,output,level));
 	
 
 	contentPane.add(input, BorderLayout.NORTH);
@@ -37,7 +37,7 @@ public class GUI extends JFrame{
 	frame.setVisible(true);
     }
     public static void main(String[] args){
-	GUI test = new GUI();
+	GUI test = new GUI(Integer.parseInt(args[0]));
 	System.out.println("Created GUI");
     }
    

@@ -21,8 +21,9 @@ public class Listener implements KeyListener{
     JTextField input;
     JTextField output;
     //Word level prediciton tables
-    BigramPredictor bigramPredictor = new BigramPredictor();
-    TrigramPredictor trigramPredictor = new TrigramPredictor();
+    BigramPredictor bigramPredictor;
+    TrigramPredictor trigramPredictor;
+    QuadgramPredictor quadgramPredictor;
     
     int numberOfWords=0;
     int wordLength;
@@ -35,11 +36,23 @@ public class Listener implements KeyListener{
     String secondLastWord="";
     int lastSpaceIndex=0;
     String currentWord="";
+    int level;
     
     PriorityQueue<Map.Entry<String,Integer>> pq;
     
-    public Listener( JTextField input, JTextField output){
+    public Listener( JTextField input, JTextField output, int level ){
         super();
+	this.level = level;
+	if( level == 2 ) {
+	    bigramPredictor = new BigramPredictor();
+	} else if (level == 3 ) {
+	    bigramPredictor = new BigramPredictor();
+	    trigramPredictor = new TrigramPredictor();
+	} else if (level == 4 ) {
+	    bigramPredictor = new BigramPredictor();
+	    trigramPredictor = new TrigramPredictor();
+	    quadgramPredictor = new QuadgramPredictor();
+	}
         this. input = input;
         this.output = output;
     }
@@ -66,28 +79,44 @@ public class Listener implements KeyListener{
             currentWord="";
             //Space pressed for the second time
             if(code == lastCode){
-                input.setText(sentence+output.getText());
+                input.setText(sentence+getFirstWord(output.getText()));
                 sentence = input.getText();
                 
             }
             System.out.println("WC: "+wordCount);
-            
+            String[] words = new String[level];
             //One word in sentence, use bigram model
-            if(wordCount>0 && wordCount<2){
-                first = getLastWord(sentence);
-                pq = bigramPredictor.predict(first);
-                output.setText(pq.peek().getKey());
+            if(wordCount>0 && (wordCount<2||level==2) ){
+		words = fillWords( sentence, level );
+		if( bigramPredictor.canPredict(first)) {
+		    pq = bigramPredictor.predict(first);
+		} else pq = null;
+
                 //At least two words in sentence, use trigram model
-            } else if(wordCount>1){
-                first = getLastWord(sentence);
-                sentence = removeLastWord(sentence);
-                second = getLastWord(sentence);
-                pq = trigramPredictor.predict(second,first);
-                output.setText(pq.peek().getKey());
-                
-            }else{
-                first = sentence;
+            } else if(wordCount>1 && (wordCount<3||level==3)){
+		words = fillWords( sentence, level );
+		if( trigramPredictor.canPredict(second,first) ) {
+		    pq = trigramPredictor.predict(second,first);
+		} else if ( bigramPredictor.canPredict(first) ){
+		    pq = bigramPredictor.predict(first);
+		} else pq = null;
+
+            }else if (wordCount>2 && (wordCount<4||level==4) ){
+		words = fillWords( sentence, level );
+
+		if ( quadgramPredictor.canPredict(third,second,first ) ) {
+		    pq = quadgramPredictor.predict(third,second,first);
+		} else if( trigramPredictor.canPredict(second,first) ) {
+		    pq = trigramPredictor.predict(second,first);
+		} else if ( bigramPredictor.canPredict(first) ){
+		    pq = bigramPredictor.predict(first);
+		} else pq = null; 
+
+	    } else {
+                first = sentence;	
+		pq = null;
             }
+	    printTopResults(pq);
             //Delete
         } else if(code == KeyEvent.VK_BACK_SPACE){
             System.out.println("Back Space");
@@ -96,37 +125,49 @@ public class Listener implements KeyListener{
         } else if( wordCount > 0 ) {
             sentence += s;
             
-            
-            PriorityQueue<Map.Entry<String,Integer>> newpq = new PriorityQueue<Map.Entry<String,Integer>>(200000, new Comparator<Map.Entry<String, Integer>>() {
-                public int compare( Map.Entry<String,Integer> arg0,
-                                   Map.Entry<String,Integer> arg1) {
-                    return arg1.getValue().compareTo(arg0.getValue() );
-                }
-            });
+            if( pq!= null ) {
+		PriorityQueue<Map.Entry<String,Integer>> newpq = new PriorityQueue<Map.Entry<String,Integer>>(200000, new Comparator<Map.Entry<String, Integer>>() {
+			public int compare( Map.Entry<String,Integer> arg0,
+					    Map.Entry<String,Integer> arg1) {
+			    return arg1.getValue().compareTo(arg0.getValue() );
+			}
+		    });
+		
+		//	    System.out.println( "CHECK FIRST: " + pq.peek() );
+		for( Map.Entry<String,Integer> element: pq ) {
+		    if( element.getKey().startsWith( currentWord ) ) {
+			newpq.add( element );
+		    }
+		}
+		pq = newpq;
+		
+	    }
+	    printTopResults( pq );
+	}
+	    lastCode = code;
+    }
+	
+    public String[] fillWords( String curSentence, int curLevel ) {
+	String[] filled = new String[level];
+	for( int i = 0; i<level; i++ ) {
+	    filled[i]=getLastWord(curSentence);
+	    curSentence = removeLastWord(curSentence);
+	}
+	return filled;
+    }
 
-	    //	    System.out.println( "CHECK FIRST: " + pq.peek() );
-            for( Map.Entry<String,Integer> element: pq ) {
-                if( element.getKey().startsWith( currentWord ) ) {
-                    newpq.add( element );
-                }
-            }
-            pq =newpq;
-	    //	    System.out.println( " CHECK: " + pq.peek() );
-            if(pq!=null &&pq.peek()!=null ){
-		//                output.setText( pq.peek().getKey() );
-		printTopResults( pq );
-		//                System.out.println(" WORD COUNT CHECK " );
-            } else{
-		//  System.out.println("Failed to match word: " + currentWord);
-            }
-            
-        }
-        lastCode = code;
+    public void regressionPrediction(String[] words, int wordCount, int gramLevel, String currentWord) {
+
     }
     
     public String getLastWord(String s){
         String w = s.substring(s.lastIndexOf(".")+1,s.length());
         return w;
+    }
+
+    public String getFirstWord(String s) {
+	String first = s.substring(0, s.indexOf(" "));
+	return first;
     }
     public String removeLastWord(String s){
         String ns = s.substring(0,s.lastIndexOf("."));
@@ -138,22 +179,26 @@ public class Listener implements KeyListener{
     }
 
     public void printTopResults( PriorityQueue<Map.Entry<String,Integer>> predictions ) {
-	PriorityQueue<Map.Entry<String,Integer>> temp = new PriorityQueue<Map.Entry<String,Integer>>(5, new Comparator<Map.Entry<String, Integer>>() {
-                public int compare( Map.Entry<String,Integer> arg0,
-				    Map.Entry<String,Integer> arg1) {
+	if( predictions != null ) {
+	    PriorityQueue<Map.Entry<String,Integer>> temp = new PriorityQueue<Map.Entry<String,Integer>>(5, new Comparator<Map.Entry<String, Integer>>() {
+		    public int compare( Map.Entry<String,Integer> arg0,
+					Map.Entry<String,Integer> arg1) {
                     return arg1.getValue().compareTo(arg0.getValue() );
-                }
-            });
-	String outputText = "";
-	for( int i=0; i<predictions.size()&&i<5; i++ ) {
-	    outputText += "\n"+predictions.peek().getKey();
-	    temp.add(predictions.poll());
+		    }
+		});
+	    String outputText = "";
+	    for( int i=0; i<predictions.size()&&i<5; i++ ) {
+		outputText += predictions.peek().getKey()+" ";
+		temp.add(predictions.poll());
+	    }
+	    for( Map.Entry<String,Integer> reverse: temp ) {
+		predictions.add( reverse );
+	    }
+	    //	System.out.println( predictions.peek() + " AND " + temp.peek() );
+	    output.setText(outputText);
+	} else {
+	    output.setText( "Wow! Cool new word dude!" );
 	}
-	for( Map.Entry<String,Integer> reverse: temp ) {
-	    predictions.add( reverse );
-	}
-	//	System.out.println( predictions.peek() + " AND " + temp.peek() );
-	output.setText(outputText);
 	
     }
 }

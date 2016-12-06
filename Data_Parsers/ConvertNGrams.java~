@@ -17,8 +17,39 @@ public class ConvertNGrams {
         //Select which model to process
         } else{
             int n =Integer.parseInt(args[0]);
+	    if(n==1) {
+
+                // Dictionary HashMap                                                                
+                HashMap<String,Boolean> dictionary = new HashMap<String,Boolean>();
+                // File to be read in                                                                
+                String filename = "words.txt";
+                try {
+                    if( filename == null )
+                        throw new FileNotFoundException();
+                    BufferedReader in = new BufferedReader( new FileReader( filename ));
+                    Scanner scan = new Scanner( in );
+
+                    while( scan.hasNext() ) {
+                        dictionary.put( scan.next(), true );
+                    }
+
+                } catch ( FileNotFoundException e ) {
+                    System.err.println( "Couldn't find dictionary file " + filename );
+                }
+                try {
+                    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("d\
+ictionary.ser")));
+                    oos.writeObject( dictionary );
+                    oos.close();
+                } catch( IOException e ) {
+                    System.err.println( "Failed to Serialize file" );
+                    System.err.println( e.getStackTrace() );
+                }
+
+
+
             //Bigram case
-            if(n==2){
+	    } else if(n==2){
                 //Doubly nested HashMap
                 HashMap<String, HashMap<String,Integer>> index = new HashMap<String,HashMap<String,Integer>>();
                 //File to be read in

@@ -37,8 +37,7 @@ public class ConvertNGrams {
                     System.err.println( "Couldn't find dictionary file " + filename );
                 }
                 try {
-                    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("d\
-ictionary.ser")));
+                    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File("dictionary.ser")));
                     oos.writeObject( dictionary );
                     oos.close();
                 } catch( IOException e ) {
