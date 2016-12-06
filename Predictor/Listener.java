@@ -76,14 +76,14 @@ public class Listener implements KeyListener{
             if(wordCount>0 && wordCount<2){
                 first = getLastWord(sentence);
                 pq = bigramPredictor.predict(first);
-                output.setText(pq.poll().getKey());
+                output.setText(pq.peek().getKey());
                 //At least two words in sentence, use trigram model
             } else if(wordCount>1){
                 first = getLastWord(sentence);
                 sentence = removeLastWord(sentence);
                 second = getLastWord(sentence);
                 pq = trigramPredictor.predict(second,first);
-                output.setText(pq.poll().getKey());
+                output.setText(pq.peek().getKey());
                 
             }else{
                 first = sentence;
@@ -103,18 +103,21 @@ public class Listener implements KeyListener{
                     return arg1.getValue().compareTo(arg0.getValue() );
                 }
             });
-            System.out.println("CW("+currentWord+")");
+
+	    //	    System.out.println( "CHECK FIRST: " + pq.peek() );
             for( Map.Entry<String,Integer> element: pq ) {
                 if( element.getKey().startsWith( currentWord ) ) {
                     newpq.add( element );
                 }
             }
             pq =newpq;
+	    //	    System.out.println( " CHECK: " + pq.peek() );
             if(pq!=null &&pq.peek()!=null ){
-                output.setText( pq.poll().getKey() );
-                System.out.println(" WORD COUNT CHECK " );
+		//                output.setText( pq.peek().getKey() );
+		printTopResults( pq );
+		//                System.out.println(" WORD COUNT CHECK " );
             } else{
-                System.out.println("Failed to match word: " + currentWord);
+		//  System.out.println("Failed to match word: " + currentWord);
             }
             
         }
@@ -133,7 +136,28 @@ public class Listener implements KeyListener{
         String ns=s.substring(s.lastIndexOf("."));
         return ns;
     }
+
+    public void printTopResults( PriorityQueue<Map.Entry<String,Integer>> predictions ) {
+	PriorityQueue<Map.Entry<String,Integer>> temp = new PriorityQueue<Map.Entry<String,Integer>>(5, new Comparator<Map.Entry<String, Integer>>() {
+                public int compare( Map.Entry<String,Integer> arg0,
+				    Map.Entry<String,Integer> arg1) {
+                    return arg1.getValue().compareTo(arg0.getValue() );
+                }
+            });
+	String outputText = "";
+	for( int i=0; i<predictions.size()&&i<5; i++ ) {
+	    outputText += "\n"+predictions.peek().getKey();
+	    temp.add(predictions.poll());
+	}
+	for( Map.Entry<String,Integer> reverse: temp ) {
+	    predictions.add( reverse );
+	}
+	//	System.out.println( predictions.peek() + " AND " + temp.peek() );
+	output.setText(outputText);
+	
+    }
 }
+
 
 
 
