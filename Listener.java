@@ -150,10 +150,30 @@ public class Listener implements KeyListener{
         }
     }
     
+    // Still needs a little work
     public void regressionPrediction(String[] words, int wordCount, int gramLevel, String currentWord) {
-        
+	if( gramLevel == 4 && wordCount > 3 ) {
+	    if( quadgramPredictor.canPredict( words[gramLevel-1], words[gramLevel-2], words[gramLevel-3] )  ){
+		pq = quadgramPredictor.predict(  words[gramLevel-1], words[gramLevel-2], words[gramLevel-3] );
+	    } else if( trigramPredictor.canPredict( words[gramLevel-1], words[gramLevel-2] ) ) {
+		pq = trigramPredictor.predict(  words[gramLevel-1], words[gramLevel-2] );
+	    } else if( bigramPredictor.canPredict( words[gramLevel-1] ) ) {
+		pq = bigramPredictor.predict( words[gramLevel-1] );
+	    } else pq = null;
+	} else if( gramLevel == 3 && wordCount > 2 ) {
+	    if( trigramPredictor.canPredict( words[gramLevel-1], words[gramLevel-2] ) ) {
+		pq = trigramPredictor.predict(  words[gramLevel-1], words[gramLevel-2] );
+	    } else if( bigramPredictor.canPredict( words[gramLevel-1] ) ) {
+		pq = bigramPredictor.predict( words[gramLevel-1] );
+	    } else pq = null;
+	} else if( gramLevel == 2 && wordCount > 1 ) {
+	    if( bigramPredictor.canPredict( words[gramLevel-1] ) ) {
+		pq = bigramPredictor.predict( words[gramLevel-1] );
+	    } else pq = null;
+	}
+	printTopResults( pq );
     }
-    
+	
     public String getLastWord(String s){
         String w = s.substring(s.lastIndexOf(".")+1,s.length());
         return w;
