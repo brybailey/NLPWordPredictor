@@ -38,22 +38,24 @@ public class Listener implements KeyListener{
     String currentWord="";
     int level;
     
+    
     PriorityQueue<Map.Entry<String,Integer>> pq;
+    PriorityQueue<Map.Entry<String,Integer>> pastpq;
     
     public Listener( JTextField input, JTextField output, int level ){
         super();
-	this.level = level;
-	if( level == 2 ) {
-	    bigramPredictor = new BigramPredictor();
-	} else if (level == 3 ) {
-	    bigramPredictor = new BigramPredictor();
-	    trigramPredictor = new TrigramPredictor();
-	} else if (level == 4 ) {
-	    bigramPredictor = new BigramPredictor();
-	    trigramPredictor = new TrigramPredictor();
-	    quadgramPredictor = new QuadgramPredictor();
-	}
-        this. input = input;
+        this.level = level;
+        if( level == 2 ) {
+            bigramPredictor = new BigramPredictor();
+        } else if (level == 3 ) {
+            bigramPredictor = new BigramPredictor();
+            trigramPredictor = new TrigramPredictor();
+        } else if (level == 4 ) {
+            bigramPredictor = new BigramPredictor();
+            trigramPredictor = new TrigramPredictor();
+            quadgramPredictor = new QuadgramPredictor();
+        }
+        this.input = input;
         this.output = output;
     }
     //Overwrite
@@ -70,166 +72,199 @@ public class Listener implements KeyListener{
         String s = Character.toString(e.getKeyChar());
         //Current sentence
         sentence = input.getText();
-        currentWord+=s;
-        // System.out.println(code);
-        System.out.println(s);
+	currentWord+=s;
+       // System.out.println(code);
         //Spacebar pressed
-        if(code == KeyEvent.VK_PERIOD){
-            wordCount++;
-            currentWord="";
-            //Space pressed for the second time
+        if(code == KeyEvent.VK_SPACE) {
+	    wordCount++;
+            //currentWord="";
+            //Space pressed for the second time, grab best match from pq, update sentence, proceed with next prediction
             if(code == lastCode){
-                input.setText(sentence+getFirstWord(output.getText()));
-                sentence = input.getText();
-                
-            }
-            System.out.println("WC: "+wordCount);
-            String[] words = new String[level];
-            //One word in sentence, use bigram model
-            if(wordCount>0 && (wordCount<2||level==2) ){
-		words = fillWords( sentence, level );
-		if( bigramPredictor.canPredict(first)) {
-		    pq = bigramPredictor.predict(first);
-		} else pq = null;
-
-                //At least two words in sentence, use trigram model
-            } else if(wordCount>1 && (wordCount<3||level==3)){
-		words = fillWords( sentence, level );
-		if( trigramPredictor.canPredict(second,first) ) {
-		    pq = trigramPredictor.predict(second,first);
-		} else if ( bigramPredictor.canPredict(first) ){
-		    pq = bigramPredictor.predict(first);
-		} else pq = null;
-
-            }else if (wordCount>2 && (wordCount<4||level==4) ){
-		words = fillWords( sentence, level );
-
-		if ( quadgramPredictor.canPredict(third,second,first ) ) {
-		    pq = quadgramPredictor.predict(third,second,first);
-		} else if( trigramPredictor.canPredict(second,first) ) {
-		    pq = trigramPredictor.predict(second,first);
-		} else if ( bigramPredictor.canPredict(first) ){
-		    pq = bigramPredictor.predict(first);
-		} else pq = null; 
-
-	    } else {
-                first = sentence;	
-		pq = null;
-            }
-	    printTopResults(pq);
-            //Delete
-        } else if(code == KeyEvent.VK_BACK_SPACE){
-            System.out.println("Back Space");
-            
-            //All normal alphanumerics
-        } else if( wordCount > 0 ) {
-            sentence += s;
-            
-            if( pq!= null ) {
-		PriorityQueue<Map.Entry<String,Integer>> newpq = new PriorityQueue<Map.Entry<String,Integer>>(200000, new Comparator<Map.Entry<String, Integer>>() {
-			public int compare( Map.Entry<String,Integer> arg0,
-					    Map.Entry<String,Integer> arg1) {
-			    return arg1.getValue().compareTo(arg0.getValue() );
-			}
-		    });
-		
-		//	    System.out.println( "CHECK FIRST: " + pq.peek() );
-		for( Map.Entry<String,Integer> element: pq ) {
-		    if( element.getKey().startsWith( currentWord ) ) {
-			newpq.add( element );
-		    }
+		wordCount--;
+                if(pq!=null){
+		    input.setText(sentence+pq.peek().getKey());
+		    sentence = input.getText();
+		    currentWord = "";
+		    wordCount++;
+                } else {
+		    // Remove the extra space, there is nothing to predict
+		    input.setText( removeChars( sentence, 1 ) );
+		    System.out.println( "Error: no predictions exist" );
 		}
-		pq = newpq;
-		
+	    } else if ( lastCode == KeyEvent.VK_PERIOD ) {
+		output.setText("");
 	    }
-	    printTopResults( pq );
-	}
-	    lastCode = code;
-    }
-	
-    public String[] fillWords( String curSentence, int curLevel ) {
-	String[] filled = new String[level];
-	for( int i = 0; i<level; i++ ) {
-	    filled[i]=getLastWord(curSentence);
-	    curSentence = removeLastWord(curSentence);
-	}
-	return filled;
-    }
+	    System.out.println("WC: "+wordCount);
+	    String[] words = new String[level-1];
+	    fillWords( sentence, words );
 
-    public void regressionPrediction(String[] words, int wordCount, int gramLevel, String currentWord) {
+	    regressionPrediction( words, wordCount, level );
+	    //	    System.out.println( "MIDDLE1: " + pq);
+	    printTopResults( pq );	    
+	    //	    pastpq = pq;
+	    //	    System.out.println( "AFTER1: " + pq );
+	    //	    currentWord = currentWord.substring(0, currentWord.indexOf( " " ) );
+	} else if (code == KeyEvent.VK_PERIOD ) {
+	    // END OF SENTENCE
+	    wordCount = 0;
+	    
+	} else if (code == KeyEvent.VK_BACK_SPACE){
+            System.out.println("Back Space");
+            if(input.getText().equals(""))
+	       wordCount=0;
+            //All normal alphanumerics
+        } else if ( code == KeyEvent.VK_SHIFT && lastCode == KeyEvent.VK_SPACE) {
+	    if( pastpq != null ) {
+		sentence = removeChars( sentence, currentWord.length() );
 
+		input.setText( sentence+ " "+ pastpq.peek().getKey() + " ");
+		sentence = input.getText();
+		currentWord = "";
+		wordCount++;
+		code = KeyEvent.VK_SPACE;
+	    }    
+	    
+	} else if ( wordCount > 0 ) {
+	    
+	    if( lastCode == KeyEvent.VK_SPACE ) {
+		currentWord = s;
+	    }
+            sentence += s;
+	    String tempSentence = removeLastWord( sentence );
+
+	    String[] words = new String[level-1];
+	    fillWords( tempSentence, words );
+
+	    updateList();
+
+	    int recount = level;
+	    if( pq != null ) {
+		while( pq.size() == 0 && pq != null && recount > 1) {
+		    regressionPrediction( words, wordCount, level-1 );
+		    updateList();
+		    recount--;
+		}
+	    }
+	    printTopResults(pq);
+	    pastpq = pq;
+        }
+        lastCode = code;
     }
     
+    public void fillWords( String curSentence, String[] array ) {
+        int wc = wordCount;
+	fillLoop:
+        for( int i = 0; i<array.length; i++ ) {
+	    if( wc > 1 ) {
+		array[i]=getLastWord(curSentence);
+		wc--;
+		removeChars( curSentence, 1 );
+		curSentence = removeLastWord(curSentence);
+	    } else {
+		array[i] = curSentence;
+		break fillLoop;
+	    }
+	}
+    }
+    
+    // Still needs a little work
+    public void regressionPrediction(String[] words, int wCount, int gramLevel) {
+	if( wCount >= gramLevel-1 ) {
+	    levelPrediction( gramLevel, words );
+	} else {
+	    levelPrediction( wCount+1, words );
+	}
+    }
+	
+
+    public void levelPrediction( int gramLevel, String[] words ) {
+	
+	if( gramLevel == 4 ) {
+	    if( quadgramPredictor.canPredict( words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] )  ){
+		pq = quadgramPredictor.predict(  words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] );
+	    } else {
+		levelPrediction( gramLevel - 1, words );
+	    }
+	} else if( gramLevel == 3 ) {
+	    if ( trigramPredictor.canPredict( words[gramLevel-3], words[gramLevel-2] ) ) {
+		pq = trigramPredictor.predict(  words[gramLevel-3], words[gramLevel-2] );	    
+	    } else {
+		levelPrediction( gramLevel - 1, words  );
+	    }
+	} else if( gramLevel == 2 ) {
+	    if( bigramPredictor.canPredict( words[gramLevel-2] ) ) {
+		pq = bigramPredictor.predict( words[gramLevel-2] );	    
+	    } else {
+		levelPrediction( gramLevel - 1, words );
+	    }
+	} else if( gramLevel == 1 ) pq = null;
+    }
+
     public String getLastWord(String s){
-        String w = s.substring(s.lastIndexOf(".")+1,s.length());
+        String w = s.substring(s.lastIndexOf(" ")+1,s.length());
         return w;
     }
 
+    public String removeChars(String s, int number){
+	return s.substring( 0, s.length()-number);
+    }
+    
     public String getFirstWord(String s) {
-	String first = s.substring(0, s.indexOf(" "));
-	return first;
+        String first = s.substring(0, s.indexOf(" "));
+        return first;
     }
     public String removeLastWord(String s){
-        String ns = s.substring(0,s.lastIndexOf("."));
+        String ns = s.substring(0,s.lastIndexOf(" "));
         return ns;
     }
     public String removeTrailingSpace(String s){
-        String ns=s.substring(s.lastIndexOf("."));
+        String ns=s.substring(s.lastIndexOf(" "));
         return ns;
     }
-
-    public void printTopResults( PriorityQueue<Map.Entry<String,Integer>> predictions ) {
-	if( predictions != null ) {
-	    PriorityQueue<Map.Entry<String,Integer>> temp = new PriorityQueue<Map.Entry<String,Integer>>(5, new Comparator<Map.Entry<String, Integer>>() {
-		    public int compare( Map.Entry<String,Integer> arg0,
-					Map.Entry<String,Integer> arg1) {
+    public void updateList() {//PriorityQueue<Map.Entry<String,Integer>> oldpq){
+        if( pq!= null ) {
+            PriorityQueue<Map.Entry<String,Integer>> newpq = new PriorityQueue<Map.Entry<String,Integer>>(200000, new Comparator<Map.Entry<String, Integer>>() {
+                public int compare( Map.Entry<String,Integer> arg0,
+                                   Map.Entry<String,Integer> arg1) {
                     return arg1.getValue().compareTo(arg0.getValue() );
-		    }
-		});
-	    String outputText = "";
-	    for( int i=0; i<predictions.size()&&i<5; i++ ) {
-		outputText += predictions.peek().getKey()+" ";
-		temp.add(predictions.poll());
+                }
+            });
+            
+            //	    System.out.println( "CHECK FIRST: " + pq.peek() );
+            for( Map.Entry<String,Integer> element: pq ) {
+                if( element.getKey().startsWith( currentWord ) ) {
+                    newpq.add( element );
+                }
+            }
+            pq = newpq;
+            
+        } else pq = null;
+
+    }
+    public void printTopResults( PriorityQueue<Map.Entry<String,Integer>> predictions ) {
+        if( predictions != null ) {
+	    int size = predictions.size();
+            PriorityQueue<Map.Entry<String,Integer>> temp = new PriorityQueue<Map.Entry<String,Integer>>(5, new Comparator<Map.Entry<String, Integer>>() {
+                public int compare( Map.Entry<String,Integer> arg0,
+                                   Map.Entry<String,Integer> arg1) {
+                    return arg1.getValue().compareTo(arg0.getValue() );
+                }
+            });
+            String outputText = "";
+            for( int i=0; i<size&&i<5; i++ ) {
+                outputText += predictions.peek().getKey()+" ";
+                temp.add(predictions.poll());
+            }
+            for( int i=0; i<temp.size(); i++ ){
+                predictions.add( temp.poll() );
+            }
+            //	System.out.println( predictions.peek() + " AND " + temp.peek() );
+            output.setText(outputText);
+        } else {
+	    if ( !currentWord.contains(".") ) {
+		output.setText( "Wow! Cool new word dude!" );
 	    }
-	    for( Map.Entry<String,Integer> reverse: temp ) {
-		predictions.add( reverse );
-	    }
-	    //	System.out.println( predictions.peek() + " AND " + temp.peek() );
-	    output.setText(outputText);
-	} else {
-	    output.setText( "Wow! Cool new word dude!" );
-	}
-	
+        }
+        
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

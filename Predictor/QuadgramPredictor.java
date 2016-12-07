@@ -59,5 +59,8 @@ public class QuadgramPredictor {
         
         QuadgramPredictor quad = new QuadgramPredictor();
         System.out.println(quad.index.get("a").get("bachelor").get("of").get("arts"));
+	System.out.println( quad.canPredict( "zoom", "in", "and") );
+	System.out.println( quad.canPredict( "zoom", "in", "say") );
+			    
     }
 }

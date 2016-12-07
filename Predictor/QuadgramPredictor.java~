@@ -43,6 +43,18 @@ public class QuadgramPredictor {
         
         return pq;
     }
+
+    public boolean canPredict( String query1, String query2, String query3 ) { 
+	if (!index.containsKey( query1 ) )
+	return false;
+	if (!index.get(query1).containsKey(query2) )
+	    return false;
+	if(!index.get(query1).get(query2).containsKey(query3))
+	    return false;
+	else return true;
+
+	
+    }
     public static void main(String[] args){
         
         QuadgramPredictor quad = new QuadgramPredictor();
