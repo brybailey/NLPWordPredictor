@@ -24,7 +24,7 @@ public class Listener implements KeyListener{
     BigramPredictor bigramPredictor;
     TrigramPredictor trigramPredictor;
     QuadgramPredictor quadgramPredictor;
-    
+    HashMap<String, Boolean> dictionary = new HashMap<String, Boolean>();
     int numberOfWords=0;
     int wordLength;
     int lastCode;
@@ -37,6 +37,8 @@ public class Listener implements KeyListener{
     int lastSpaceIndex=0;
     String currentWord="";
     int level;
+    ViterbiDecoder biVit;
+    ViterbiDecoder triVit;
     
     
     PriorityQueue<Map.Entry<String,Integer>> pq;
@@ -57,6 +59,9 @@ public class Listener implements KeyListener{
         }
         this.input = input;
         this.output = output;
+	biVit = new ViterbiBigramDecoder( "bigram_probs.txt" ); 
+	triVit = new ViterbiTrigramDecoder( "trigram_probs.txt" );
+	for( 
     }
     //Overwrite
     public void keyTyped(KeyEvent e) {
@@ -73,6 +78,7 @@ public class Listener implements KeyListener{
         //Current sentence
         sentence = input.getText();
 	currentWord+=s;
+
        // System.out.println(code);
         //Spacebar pressed
         if(code == KeyEvent.VK_SPACE) {
@@ -89,6 +95,10 @@ public class Listener implements KeyListener{
                 } else {
 		    // Remove the extra space, there is nothing to predict
 		    input.setText( removeChars( sentence, 1 ) );
+		    sentence = input.getText();
+		    currentWord = getLastWord( sentence );
+		    
+		    currentWord = biVit.viterbi( currentWord );
 		    System.out.println( "Error: no predictions exist" );
 		}
 	    } else if ( lastCode == KeyEvent.VK_PERIOD ) {
@@ -97,12 +107,11 @@ public class Listener implements KeyListener{
 	    System.out.println("WC: "+wordCount);
 	    String[] words = new String[level-1];
 	    fillWords( sentence, words );
-
 	    regressionPrediction( words, wordCount, level );
-	    //	    System.out.println( "MIDDLE1: " + pq);
+	    System.out.println( "MIDDLE1: " + pq);
 	    printTopResults( pq );	    
-	    //	    pastpq = pq;
-	    //	    System.out.println( "AFTER1: " + pq );
+	    pastpq = pq;
+	    //System.out.println( "AFTER1: " + pq );
 	    //	    currentWord = currentWord.substring(0, currentWord.indexOf( " " ) );
 	} else if (code == KeyEvent.VK_PERIOD ) {
 	    // END OF SENTENCE
@@ -178,7 +187,6 @@ public class Listener implements KeyListener{
 	
 
     public void levelPrediction( int gramLevel, String[] words ) {
-	
 	if( gramLevel == 4 ) {
 	    if( quadgramPredictor.canPredict( words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] )  ){
 		pq = quadgramPredictor.predict(  words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] );
@@ -186,8 +194,8 @@ public class Listener implements KeyListener{
 		levelPrediction( gramLevel - 1, words );
 	    }
 	} else if( gramLevel == 3 ) {
-	    if ( trigramPredictor.canPredict( words[gramLevel-3], words[gramLevel-2] ) ) {
-		pq = trigramPredictor.predict(  words[gramLevel-3], words[gramLevel-2] );	    
+	    if ( trigramPredictor.canPredict( words[gramLevel-2], words[gramLevel-3] ) ) {
+		pq = trigramPredictor.predict(  words[gramLevel-2], words[gramLevel-3] );	
 	    } else {
 		levelPrediction( gramLevel - 1, words  );
 	    }

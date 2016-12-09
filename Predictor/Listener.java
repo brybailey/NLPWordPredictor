@@ -24,7 +24,6 @@ public class Listener implements KeyListener{
     BigramPredictor bigramPredictor;
     TrigramPredictor trigramPredictor;
     QuadgramPredictor quadgramPredictor;
-    
     int numberOfWords=0;
     int wordLength;
     int lastCode;
@@ -37,6 +36,9 @@ public class Listener implements KeyListener{
     int lastSpaceIndex=0;
     String currentWord="";
     int level;
+    ViterbiDecoder biVit;
+    ViterbiDecoder triVit;
+    Dictionary dictionary;
     
     
     PriorityQueue<Map.Entry<String,Integer>> pq;
@@ -45,6 +47,7 @@ public class Listener implements KeyListener{
     public Listener( JTextField input, JTextField output, int level ){
         super();
         this.level = level;
+	dictionary = new Dictionary();
         if( level == 2 ) {
             bigramPredictor = new BigramPredictor();
         } else if (level == 3 ) {
@@ -57,6 +60,9 @@ public class Listener implements KeyListener{
         }
         this.input = input;
         this.output = output;
+	biVit = new ViterbiBigramDecoder( "bigram_probs.txt" ); 
+	triVit = new ViterbiTrigramDecoder( "trigram_probs.txt" );
+
     }
     //Overwrite
     public void keyTyped(KeyEvent e) {
@@ -90,7 +96,15 @@ public class Listener implements KeyListener{
                 } else {
 		    // Remove the extra space, there is nothing to predict
 		    input.setText( removeChars( sentence, 1 ) );
-		    System.out.println( "Error: no predictions exist" );
+		    sentence = input.getText();
+		    currentWord = getLastWord( sentence );
+		    if( !dictionary.contains( currentWord ) ) {
+			currentWord = biVit.viterbi( currentWord );
+		    }    
+		    sentence = removeLastWord( sentence );
+		    sentence = sentence + currentWord;
+		    input.setText( sentence );
+		    //System.out.println( "Error: no predictions exist" );
 		}
 	    } else if ( lastCode == KeyEvent.VK_PERIOD ) {
 		output.setText("");
