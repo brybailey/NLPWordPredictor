@@ -5,6 +5,7 @@
  *  Author: Johan Boye
  */  
 
+package nlp;
 
 /** 
  *  This interface specifies the requirements on required methods of a Viterbi decoder. 

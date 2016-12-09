@@ -29,10 +29,11 @@ public class CorrectKeystrokeErrors {
 	    v = new ViterbiTrigramDecoder( a_file );
 	}
 	else {
-	    return "n should be 2 or 3";
+	    return;
 	}
 	String s = mistyped +  Key.indexToChar( Key.START_END );
 	String correct = v.viterbi( s );
+	System.out.println( correct );
 	return correct;
     }
 
@@ -100,7 +101,7 @@ public class CorrectKeystrokeErrors {
 	    }
 	}
 	if ( word != null && a_file != null ) {
-	    System.out.println( processMistypedWord( word, a_file, n ) );
+	    processTestFile( word, a_file, n );
 	}
     }
 }

@@ -5,8 +5,6 @@
  *  Author: Johan Boye
  */  
 
-package nlp;
-
 import java.util.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -40,9 +38,11 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
 	    InputStreamReader in = new InputStreamReader( new FileInputStream(filename), StandardCharsets.UTF_8 );
 	    Scanner scan = new Scanner( in );
 	    scan.useLocale( Locale.forLanguageTag( "en-US" ));
+	    int size = scan.nextInt();
 	    while ( scan.hasNext() ) {
 		int i = scan.nextInt();
 		int j = scan.nextInt();
+		System.out.println( i + " AND " + j );
 		double d = scan.nextDouble();
 		a[i][j] = d;
 	    }
@@ -98,28 +98,52 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
 
 	// Initialization
 	for ( int i=0; i<Key.NUMBER_OF_CHARS; i++ ) {
+
 	    v[0][i] = a[Key.START_END][i]+b[index[0]][i];
+
 	    backptr[0][i] = Key.START_END;
 	}
 
 	// Induction step
+	// Go through the length of the string
+	int argMax = -1;
+	for ( int t = 1; t<index.length; t++ ) {
+	    // Go through the current possible states
+	    for ( int j = 0; j<Key.NUMBER_OF_CHARS; j++ ) {		
+		// Variable of the max prob at state t
+		double maxProb = Double.NEGATIVE_INFINITY;
+		
+		// Compared to each of the last possible states
+		for ( int i = 0; i<Key.NUMBER_OF_CHARS; i++ ) {
 
+		    // The testMax is the probability of each combination of paths from previous nodes to current state at node j
+		    double testMax =  v[t-1][i]+a[i][j]+b[index[t]][j];
 
-	// YOUR CODE HERE
+		    
+		    // If probability is higher than previous max at state t, update it, and the backptr
+		    if( maxProb < testMax ) {
+			maxProb = testMax;
 
-
-	// Termination step
-
-
-	// YOUR CODE HERE
+			argMax = i;
+		    }
+		}
+		v[t][j] = maxProb;
+		backptr[t][j] = argMax;
+	    }
+	}
 
 
 	// Finally return the result
+	// Go backwards through the path with highest probability at each state
+	String result = "";
+	int letter = backptr[index.length-1][Key.START_END];
+	for( int back = index.length-2; back>=0; back-- ) {
+	    result =  Key.indexToChar( letter ) + result;
+	    letter = backptr[back][letter];
+	}
 
-
-	// REPLACE THE STATEMENT BELOW WITH YOUR CODE
-
-	return s;
+	return result;
+	
     }
 
 

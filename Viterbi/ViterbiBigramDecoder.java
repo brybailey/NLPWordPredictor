@@ -5,8 +5,6 @@
  *  Author: Johan Boye
  */  
 
-package nlp;
-
 import java.util.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -40,9 +38,11 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
 	    InputStreamReader in = new InputStreamReader( new FileInputStream(filename), StandardCharsets.UTF_8 );
 	    Scanner scan = new Scanner( in );
 	    scan.useLocale( Locale.forLanguageTag( "en-US" ));
+	    int size = scan.nextInt();
 	    while ( scan.hasNext() ) {
 		int i = scan.nextInt();
 		int j = scan.nextInt();
+		System.out.println( i + " AND " + j );
 		double d = scan.nextDouble();
 		a[i][j] = d;
 	    }
@@ -61,6 +61,7 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
      */
     public void init_b() {
 	for ( int i=0; i<Key.NUMBER_OF_CHARS; i++ ) {
+	    System.out.println( i );
 	    char[] cs = Key.neighbour[i];
 	    // Initialize all log-probabilities to some small value.
 	    for ( int j=0; j<Key.NUMBER_OF_CHARS; j++ ) {
