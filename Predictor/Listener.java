@@ -73,6 +73,7 @@ public class Listener implements KeyListener{
         //Current sentence
         sentence = input.getText();
 	currentWord+=s;
+
        // System.out.println(code);
         //Spacebar pressed
         if(code == KeyEvent.VK_SPACE) {
@@ -97,12 +98,11 @@ public class Listener implements KeyListener{
 	    System.out.println("WC: "+wordCount);
 	    String[] words = new String[level-1];
 	    fillWords( sentence, words );
-
 	    regressionPrediction( words, wordCount, level );
-	    //	    System.out.println( "MIDDLE1: " + pq);
+	    System.out.println( "MIDDLE1: " + pq);
 	    printTopResults( pq );	    
-	    //	    pastpq = pq;
-	    //	    System.out.println( "AFTER1: " + pq );
+	    pastpq = pq;
+	    //System.out.println( "AFTER1: " + pq );
 	    //	    currentWord = currentWord.substring(0, currentWord.indexOf( " " ) );
 	} else if (code == KeyEvent.VK_PERIOD ) {
 	    // END OF SENTENCE
@@ -178,7 +178,6 @@ public class Listener implements KeyListener{
 	
 
     public void levelPrediction( int gramLevel, String[] words ) {
-	
 	if( gramLevel == 4 ) {
 	    if( quadgramPredictor.canPredict( words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] )  ){
 		pq = quadgramPredictor.predict(  words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] );
@@ -186,8 +185,8 @@ public class Listener implements KeyListener{
 		levelPrediction( gramLevel - 1, words );
 	    }
 	} else if( gramLevel == 3 ) {
-	    if ( trigramPredictor.canPredict( words[gramLevel-3], words[gramLevel-2] ) ) {
-		pq = trigramPredictor.predict(  words[gramLevel-3], words[gramLevel-2] );	    
+	    if ( trigramPredictor.canPredict( words[gramLevel-2], words[gramLevel-3] ) ) {
+		pq = trigramPredictor.predict(  words[gramLevel-2], words[gramLevel-3] );	
 	    } else {
 		levelPrediction( gramLevel - 1, words  );
 	    }
