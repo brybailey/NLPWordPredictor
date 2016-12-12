@@ -1,7 +1,9 @@
  /*
  * 2016 Bryan Bailey & Braden Becker
+ * The central class of our n-gram word prediction model
  *
- *
+ * Class that mediates interaction between user input in text field
+ * and n-gram word and letter level backoff prediction, as well as viterbi decoding
  */
 
 import java.awt.BorderLayout;
@@ -21,31 +23,32 @@ public class Listener implements KeyListener{
     //Textfields
     JTextField input;
     JTextField output;
-    //Word level prediciton tables
+
+    //Word level prediction tables
+    Dictionary dictionary;
     BigramPredictor bigramPredictor;
     TrigramPredictor trigramPredictor;
     QuadgramPredictor quadgramPredictor;
-    int numberOfWords=0;
-    int wordLength;
-    int lastCode;
+    ViterbiDecoder vit;
+
+    // Variables to keep track of user input
     int wordCount=0;
     String sentence="";
-    String first="";
-    String second="";
-    String third="";
-    String secondLastWord="";
-    int lastSpaceIndex=0;
     String currentWord="";
+
+    // determines n-gram level
     int level;
-    ViterbiDecoder vit;
-    Dictionary dictionary;
     String[] words;
+
+    // For data colletion purposes
     int lettersSaved = 0;
     
-    
+    // Determines the most probable word that follows the gram sequence (if any)
     PriorityQueue<Map.Entry<String,Integer>> pq;
-    PriorityQueue<Map.Entry<String,Integer>> pastpq;
-    
+   
+    /**
+     * Constructs a KeyListener with gram predictors and viterbi decoding at @param levels
+     */
     public Listener( JTextField input, JTextField output, int level, int viterbi ){
         super();
         this.level = level;
@@ -69,15 +72,20 @@ public class Listener implements KeyListener{
 
         this.input = input;
         this.output = output;
+
+	// Array of words to be filled (similar to a queue) as words are typed
 	words = new String[level-1];
 
     }
-    //Overwrite
+
+    //@Overwrite
     public void keyTyped(KeyEvent e) {
     }
-    //Overwrite
+
+    //@Overwrite
     public void keyReleased(KeyEvent e) {
     }
+
     //Process updates
     public void keyPressed(KeyEvent e) {
         //KeyEvent code
@@ -98,28 +106,28 @@ public class Listener implements KeyListener{
         if(code == KeyEvent.VK_SPACE) {
 	    wordCount++;
             currentWord = getLastWord(sentence);
-	    System.out.println( currentWord + "AND" );
-	    if( !dictionary.contains( currentWord ) && currentWord != "." && !currentWord.equals("") ) {
+
+	    // If the input word is not in the dictionary
+	    if( !dictionary.contains( currentWord ) && !containsPunctuation( currentWord ) ) {
+		// Used for viterbi purposes
 		currentWord += Key.START_END;
+		
+		// Decode using viterbi algorithm
+		//100 to keep the program computationally efficient
 		for( int i = 0; i < 100 && !dictionary.contains( currentWord ); i++ ) {
 		    currentWord = vit.viterbi( currentWord );
 		}
 		sentence = removeLastWord(sentence);
-		//		sentence += " " + currentWord;
+
 		if( wordCount < 2 ) {
 		    sentence += currentWord;
 		} else sentence += " " + currentWord;
 	    }
 
 	    input.setText(sentence);
-            System.out.println("Last Typed Word: /" +currentWord+"/");
-            //Attempt to decode the last typed word until a valid word is found
-            //Update pq predictions based on the last typed word
             fillWords( sentence, words );
-            System.out.println("SPACE: Words: " + Arrays.toString(words));
             regressionPrediction( words, wordCount, level );
             printTopResults(pq);
-            pastpq = pq;
             currentWord ="";
 
 	    /* Add current top word in pq to sentence,
@@ -137,82 +145,50 @@ public class Listener implements KeyListener{
                 input.setText(sentence+pq.peek().getKey()+" ");
                 wordCount++;
                 sentence = removeChars(input.getText(),1);
-                System.out.println("ENTER: Sentence: /"+sentence+"/");
-                
                 fillWords( sentence, words );
-                System.out.println("ENTER: Words: " + Arrays.toString(words));
                 regressionPrediction( words, wordCount, level );
                 printTopResults(pq);
-                pastpq = pq;
-	    } else{
-		System.out.println("No current prediction, please enter more words");
 	    }
 	    currentWord="";
+
 	    /* New sentence if a space follows,
 	     * reset current word and revert to smallest gram
 	     */
 		
-	} else if (code == KeyEvent.VK_PERIOD ) {
-	    // END OF SENTENCE
+	} else if (code == KeyEvent.VK_PERIOD || code == KeyEvent.VK_SEMICOLON || code == KeyEvent.VK_EXCLAMATION_MARK ) {
+	    // END OF SENTENCE or PHRASE
 	    wordCount = 0;
 	    
 	} else if (code == KeyEvent.VK_BACK_SPACE){
             System.out.println("Back Space");
             if(input.getText().equals(""))
 		wordCount=0;
-            //All normal alphanumerics
-	    /*else if ( code == KeyEvent.VK_SHIFT && lastCode == KeyEvent.VK_SPACE) {
-		if( pastpq != null ) {
-		sentence = removeChars( sentence, currentWord.length() );
-
-		input.setText( sentence+ " "+ pastpq.peek().getKey() + " ");
-		sentence = input.getText();
-		currentWord = "";
-		wordCount++;
-		code = KeyEvent.VK_SPACE;
-	    }    
-	      */
+	    
 	    /* New character typed, update pq
              * revert to smaller gram if no ngram exists,
              * print out error if pq is null
              */
 	} else if ( wordCount > 0 ) {
-	    /*	    
-		    if( lastCode == KeyEvent.VK_SPACE ) {
-		currentWord = s;
-	    }
-            sentence += s;
-	    String tempSentence = removeLastWord( sentence );
-	    
-	    String[] words = new String[level-1];
-	    fillWords( tempSentence, words );
-
-	    pq = updateList();
-	    //	    System.out.println( pq );
-	    
-
-	    int recount = level;
-	    if( pq == null ) {
-		while( pq == null && recount > 1) {
-		    regressionPrediction( words, wordCount, level-1 );
-		    pq = updateList();
-		    System.out.println( "AFTER: " + pq );
-		    recount--;
-		}
-	    }
-	    printTopResults();
-	    pastpq = pq;
-        }
-        lastCode = code;*/
-	    System.out.println("LETTER: currentWord: /"+currentWord+"/");
             
             regressionPredictionLetter(words, wordCount,level);
             printTopResults(pq);
 	}
     }
 	
+
+    /* Determines if a string contains punctuation in order to avoid
+     * erroneous viterbi decoding
+     */
+	public boolean containsPunctuation( String punc ) {
+	    return punc.contains(".") || punc.contains(";") || punc.contains("\"") || punc.contains("?" ) || punc.contains( "!" ) || punc.equals("");
+	}
+
+    /*
+     * Fills the @param array by breaking up the @param sentence by its spaces
+     */
     public void fillWords( String curSentence, String[] array ) {
         int wc = wordCount;
+
 	fillLoop:
         for( int i = 0; i<array.length; i++ ) {
 	    if( wc > 1 ) {
@@ -226,7 +202,9 @@ public class Listener implements KeyListener{
 	    }
 	}
     }
-    
+
+    // @1
+    // Backoff prediction at the world level    
     public void regressionPrediction(String[] words, int wCount, int gramLevel) {
 	if( wCount >= gramLevel-1 ) {
 	    levelPrediction( gramLevel, words );
@@ -235,6 +213,8 @@ public class Listener implements KeyListener{
 	}
     }
 	
+    // @2
+    // Backoff prediction at the letter level
     public void regressionPredictionLetter(String[] words, int wCount, int gramLevel) {
         if( wCount >= gramLevel-1 ) {
             levelPredictionLetter( gramLevel, words );
@@ -243,6 +223,8 @@ public class Listener implements KeyListener{
         }
     }
 
+
+    // Recursive helper method for @1
     public void levelPrediction( int gramLevel, String[] words ) {
 	if( gramLevel == 4 ) {
 	    if( quadgramPredictor.canPredict( words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] )  ){
@@ -265,6 +247,9 @@ public class Listener implements KeyListener{
 	} else if( gramLevel == 1 ) pq = null;
     }
 
+
+    // Recursive helper method for @2
+    // Updates the pq at the letter level
     public void levelPredictionLetter( int gramLevel, String[] words ) {
         if( gramLevel == 4 ) {
             if( quadgramPredictor.canPredict( words[gramLevel-2], words[gramLevel-3], words[gramLevel-4] )  ){
@@ -297,7 +282,56 @@ public class Listener implements KeyListener{
             pq = null;
         }
     }
-    
+
+    /* 
+     * Updates the list to trim the prediction pq at the letter level
+     * pq is updated to only include prediction results that begin with the input stem 
+     */
+    public void updateList(){
+
+        if( pq!= null ) {
+            PriorityQueue<Map.Entry<String,Integer>> updatedpq = new PriorityQueue<Map.Entry<String,Integer>>(20000, new pqComparator() );
+	    for( Map.Entry<String,Integer> element: pq ) {
+		if( element.getKey().startsWith( currentWord ) ) {
+                    updatedpq.add( element );
+		}
+	    }
+	    pq = updatedpq;
+	} else pq = null;
+
+    }
+
+    /*
+     * Takes @param predictions and printst the top five results
+     * which represent the most likely word predictions
+     */ 
+    public void printTopResults( PriorityQueue<Map.Entry<String,Integer>> predictions ) {
+        if( predictions != null ) {
+	    int size = predictions.size();
+            PriorityQueue<Map.Entry<String,Integer>> temp = new PriorityQueue<Map.Entry<String,Integer>>(5, new pqComparator() );
+            String outputText = "";
+            for( int i=0; i<size&&i<5; i++ ) {
+                outputText += predictions.peek().getKey()+" ";
+                temp.add(predictions.poll());
+            }
+            for( int i=0; i<temp.size(); i++ ){
+                predictions.add( temp.poll() );
+            }
+
+            output.setText(outputText);
+        } else {
+	    if ( !currentWord.contains(".") ) {
+		output.setText( "No predictions" );
+	    }
+        }
+        
+    }    
+
+
+    /*
+     *Various String parsing helper methods
+     */ 
+
     public String getLastWord(String s){
         String w = s.substring(s.lastIndexOf(" ")+1,s.length());
         return w;
@@ -321,44 +355,6 @@ public class Listener implements KeyListener{
         String ns=s.substring(s.lastIndexOf(" "));
         return ns;
     }
-    public void updateList(){
 
-        if( pq!= null ) {
-
-            PriorityQueue<Map.Entry<String,Integer>> updatedpq = new PriorityQueue<Map.Entry<String,Integer>>(20000, new pqComparator() );
-            
-	    System.out.println( "PQ: " + pq );
-	    //System.out.println( "cur2: " + currentWord );
-	    for( Map.Entry<String,Integer> element: pq ) {
-		if( element.getKey().startsWith( currentWord ) ) {
-                    updatedpq.add( element );
-		}
-	    }
-	    
-	    pq = updatedpq;
-	} else pq = null;
-
-    }
-    public void printTopResults( PriorityQueue<Map.Entry<String,Integer>> predictions ) {
-        if( predictions != null ) {
-	    int size = predictions.size();
-            PriorityQueue<Map.Entry<String,Integer>> temp = new PriorityQueue<Map.Entry<String,Integer>>(5, new pqComparator() );
-            String outputText = "";
-            for( int i=0; i<size&&i<5; i++ ) {
-                outputText += predictions.peek().getKey()+" ";
-                temp.add(predictions.poll());
-            }
-            for( int i=0; i<temp.size(); i++ ){
-                predictions.add( temp.poll() );
-            }
-            //	System.out.println( predictions.peek() + " AND " + temp.peek() );
-            output.setText(outputText);
-        } else {
-	    if ( !currentWord.contains(".") ) {
-		output.setText( "No predictions" );
-	    }
-        }
-        
-    }
 }
 

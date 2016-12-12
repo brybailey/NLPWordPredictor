@@ -1,7 +1,8 @@
 /*  
- *  This file is part of the computer assignment for the
- *  Natural Language Processing course at Williams.
- * 
+ * Braden Becker and Bryan Bailey
+ * Used in Viterbi decoding at letter level
+ * of n-gram word prediction model
+ *
  *  Author: Johan Boye
  */  
 
@@ -38,7 +39,6 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
 	    InputStreamReader in = new InputStreamReader( new FileInputStream(filename), StandardCharsets.UTF_8 );
 	    Scanner scan = new Scanner( in );
 	    scan.useLocale( Locale.forLanguageTag( "en-US" ));
-	    //	    int size = scan.nextInt();
 	    while ( scan.hasNext() ) {
 		int i = scan.nextInt();
 		int j = scan.nextInt();
@@ -144,7 +144,7 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
 	return result;
 	
     }
-
+    
 
     // ------------------------------------------------------
 

@@ -1,3 +1,10 @@
+/*
+ * Braden Becker and Bryan Bailey
+ *
+ * Initializes the Unix words.txt dictionary as a hashmap 
+ * for constant time access
+ */
+
 import java.io.*;
 import java.util.*;
 

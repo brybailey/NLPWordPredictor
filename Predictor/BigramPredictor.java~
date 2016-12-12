@@ -42,6 +42,10 @@ public class BigramPredictor {
     
     return pq;
     }
+
+    public boolean canPredict( String query ) {
+	return index.containsKey(query);
+    }
     public static void main(String[] args){
        
         BigramPredictor bi = new BigramPredictor();

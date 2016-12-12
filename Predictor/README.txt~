@@ -1,0 +1,13 @@
+This program was designed and built as the final project for our Natuaral Langauge Processing course at Williams College
+taught in Fall 2016 by visiting Professor Johan Boye. 
+
+@authors: Braden Becker '19 and Bryan Bailey '19
+@language: Java
+@init_class: GUI.java
+
+The program is run through the GUI.java file with the following flags determining project functioning:
+java GUI -n <number> (2,3,4) -v <number> (2,3)
+
+the -n flag will determine the n-gram level, and the v-flag will determine the viterbi decoding level
+if no arguments are given, the program will initialize to a bigram model for both prediction and decoding
+

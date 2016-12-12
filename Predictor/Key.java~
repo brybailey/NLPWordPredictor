@@ -12,7 +12,7 @@ import java.util.Random;
 public class Key {
     
     /** We will consider a-z + SPACE, all in all 27 characters. */
-    static final int NUMBER_OF_CHARS = 28; 
+    static final int NUMBER_OF_CHARS = 27; 
 
     /** The START_END symbol is used to represent space, as well
         as beginning and end of line. */

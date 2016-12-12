@@ -1,7 +1,7 @@
 /*
  * 2016 Braden Becker & Bryan Bailey
- * Predicts the next word of a sentence using trigram probabilites
- *
+ * Predicts the next word of a sentence using quadgram probabilites
+ * See BigramPredictor.java for a more detailed explanation of the Predictor Classes
  */
 
 import java.io.*;
@@ -27,20 +27,9 @@ public class QuadgramPredictor {
     
     public PriorityQueue<Map.Entry<String,Integer>> predict(String query1, String query2, String query3){
         Map<String,Integer> map = index.get(query1).get(query2).get(query3);
-        
-        PriorityQueue<Map.Entry<String,Integer>> pq =
-        new PriorityQueue<Map.Entry<String,Integer>>(map.size(), new Comparator<Map.Entry<String, Integer>>(){
-            
-            public int compare(Map.Entry<String, Integer> arg0,
-                               Map.Entry<String, Integer> arg1) {
-                return arg1.getValue().compareTo(arg0.getValue());
-            }
-        });
-        
-        
-        pq.addAll(map.entrySet());
-        
-        
+	PriorityQueue<Map.Entry<String,Integer>> pq = new PriorityQueue<Map.Entry<String,Integer>>(map.size(), new pqComparator() );
+	pq.addAll(map.entrySet());
+                
         return pq;
     }
 

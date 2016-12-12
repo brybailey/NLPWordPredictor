@@ -1,6 +1,6 @@
 /*  
- *  This file is part of the computer assignment for the
- *  Natural Language Processing course at Williams.
+ *  Braden Becker and Bryan Bailey
+ *  Used in n-gram word prediction model
  * 
  *  Author: Johan Boye
  */  

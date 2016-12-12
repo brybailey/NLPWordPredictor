@@ -14,7 +14,7 @@ public class Dictionary {
 	    dictionary = (HashMap) ois.readObject();
 	    ois.close();
 	    fis.close();
-	    System.out.print( " Done." );
+	    System.out.println( " Done." );
 	    /*
 	      while( in.hasNext() ) {
 	      

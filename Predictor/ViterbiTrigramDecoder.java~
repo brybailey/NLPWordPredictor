@@ -38,7 +38,7 @@ public class ViterbiTrigramDecoder implements ViterbiDecoder {
 	    try {
 		InputStreamReader in = new InputStreamReader(new FileInputStream(filename), StandardCharsets.UTF_8);
 		Scanner scan = new Scanner(in).useLocale(Locale.US);
-		int size = scan.nextInt();
+		//int size = scan.nextInt();
 		while (scan.hasNext()) {
 		    int i = scan.nextInt();
 		    int j = scan.nextInt();

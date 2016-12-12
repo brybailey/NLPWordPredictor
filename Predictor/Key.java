@@ -1,6 +1,7 @@
 /*  
- *  This file is part of the computer assignment for the
- *  Natural Language Processing course at Williams.
+ *  Braden Becker and Bryan Bailey
+ *  Used in the Viterbi Decoding at the letter level
+ *  in the n-gram model
  * 
  *  Author: Johan Boye
  */  

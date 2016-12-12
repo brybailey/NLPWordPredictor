@@ -1,6 +1,7 @@
 /*
  * 2016 Braden Becker & Bryan Bailey
  * Predicts the next word of a sentence using trigram probabilites
+ * See BigramPredictor.java for a more detailed explanation of the Predictor Classes
  *
  */
 
@@ -27,17 +28,7 @@ public class TrigramPredictor {
     
     public PriorityQueue<Map.Entry<String,Integer>> predict(String query1, String query2){
         Map<String,Integer> map = index.get(query1).get(query2);
-        
-        PriorityQueue<Map.Entry<String,Integer>> pq =
-	    new PriorityQueue<Map.Entry<String,Integer>>(map.size(), new pqComparator() );/*{
-            
-            public int compare(Map.Entry<String, Integer> arg0,
-                               Map.Entry<String, Integer> arg1) {
-                return arg1.getValue().compareTo(arg0.getValue());
-            }
-	    });*/
-        
-        
+        PriorityQueue<Map.Entry<String,Integer>> pq = new PriorityQueue<Map.Entry<String,Integer>>(map.size(), new pqComparator() );
         pq.addAll(map.entrySet());
         
         
@@ -50,6 +41,7 @@ public class TrigramPredictor {
 	else return true;
 	
     }
+
     public static void main(String[] args){
         
         TrigramPredictor tri = new TrigramPredictor();
