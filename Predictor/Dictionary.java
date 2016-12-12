@@ -8,13 +8,13 @@ public class Dictionary {
 
     public Dictionary() {
 	try {
-	    System.out.println( "Initializing Dictionary..." );
+	    System.out.print( "Initializing Dictionary..." );
 	    FileInputStream fis = new FileInputStream(FILENAME);
 	    ObjectInputStream ois = new ObjectInputStream(fis);
 	    dictionary = (HashMap) ois.readObject();
 	    ois.close();
 	    fis.close();
-	    System.out.println( "Done." );
+	    System.out.println( " Done." );
 	    /*
 	      while( in.hasNext() ) {
 	      

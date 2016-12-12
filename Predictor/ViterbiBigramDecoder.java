@@ -60,7 +60,6 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
      */
     public void init_b() {
 	for ( int i=0; i<Key.NUMBER_OF_CHARS; i++ ) {
-	    System.out.println( i );
 	    char[] cs = Key.neighbour[i];
 	    // Initialize all log-probabilities to some small value.
 	    for ( int j=0; j<Key.NUMBER_OF_CHARS; j++ ) {

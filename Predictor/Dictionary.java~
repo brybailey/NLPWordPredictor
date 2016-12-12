@@ -8,13 +8,13 @@ public class Dictionary {
 
     public Dictionary() {
 	try {
-	    System.out.println( "Initializing Dictionary..." );
+	    System.out.print( "Initializing Dictionary..." );
 	    FileInputStream fis = new FileInputStream(FILENAME);
 	    ObjectInputStream ois = new ObjectInputStream(fis);
 	    dictionary = (HashMap) ois.readObject();
 	    ois.close();
 	    fis.close();
-	    System.out.println( "Done." );
+	    System.out.print( " Done." );
 	    /*
 	      while( in.hasNext() ) {
 	      
@@ -28,7 +28,7 @@ public class Dictionary {
 
     }
 
-    private boolean contains( String word ) {
+    public boolean contains( String word ) {
 	return dictionary.containsKey( word );
     }
 	    

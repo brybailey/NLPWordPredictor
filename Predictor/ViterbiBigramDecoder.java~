@@ -42,7 +42,6 @@ public class ViterbiBigramDecoder implements ViterbiDecoder {
 	    while ( scan.hasNext() ) {
 		int i = scan.nextInt();
 		int j = scan.nextInt();
-		System.out.println( i + " AND " + j );
 		double d = scan.nextDouble();
 		a[i][j] = d;
 	    }

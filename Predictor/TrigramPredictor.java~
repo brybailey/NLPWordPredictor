@@ -43,6 +43,13 @@ public class TrigramPredictor {
         
         return pq;
     }
+    
+    public boolean canPredict( String query1, String query2 ) {
+	if( !index.containsKey(query1)) return false;
+	if( !index.get(query1).containsKey(query2) ) return false;
+	else return true;
+	
+    }
     public static void main(String[] args){
         
         TrigramPredictor tri = new TrigramPredictor();

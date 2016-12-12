@@ -29,13 +29,13 @@ public class TrigramPredictor {
         Map<String,Integer> map = index.get(query1).get(query2);
         
         PriorityQueue<Map.Entry<String,Integer>> pq =
-        new PriorityQueue<Map.Entry<String,Integer>>(map.size(), new Comparator<Map.Entry<String, Integer>>(){
+	    new PriorityQueue<Map.Entry<String,Integer>>(map.size(), new pqComparator() );/*{
             
             public int compare(Map.Entry<String, Integer> arg0,
                                Map.Entry<String, Integer> arg1) {
                 return arg1.getValue().compareTo(arg0.getValue());
             }
-        });
+	    });*/
         
         
         pq.addAll(map.entrySet());

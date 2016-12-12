@@ -36,8 +36,11 @@ public class GUI extends JFrame{
 	frame.setSize(500,500);
 	frame.setVisible(true);
     }
+
     public static void main(String[] args){
-	GUI test = new GUI(args[0]);
+	//	int level = 2;
+	//	int viterbi = null;
+	GUI test = new GUI(Integer.parseInt(args[0]));
 	System.out.println("Created GUI");
     }
    
